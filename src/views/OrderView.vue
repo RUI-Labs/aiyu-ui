@@ -51,7 +51,27 @@
             </div>
         </section>
 
-        <article></article>
+        <div class="p-2">
+                <article class="w-full p-4 bg-gray-200 rounded-xl">
+                
+                    <div class="w-full grid grid-cols-7 justify-center items-center gap-4">
+                        <div class="col-span-5">
+                            <h1 class="text-xl mb-2">Aiyu-BING</h1>
+                            <p class="text-xs font-light text-gray-500">That’s what i got! If you see anything not right, simply edit them by tapping, Aiyu will learn and do better next time!</p>
+                        </div>
+                        
+                        <div class="col-span-2 flex justify-end items-center">
+                            <div class="flex flex-col justify-center items-center">
+                                <button class="btn btn-circle btn-sm">
+                                    <Icon class="text-xl" icon="material-symbols:refresh-sharp"></Icon>
+                                </button>
+                                <div class="text-xs mt-2">Try Again</div>
+                            </div>
+                        </div>
+                    </div>
+
+            </article>
+        </div>
 
 
     </div>

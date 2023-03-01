@@ -1,0 +1,6 @@
+{
+  "appId": "org.shaoye.aiyu",
+  "appName": "Aiyu",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

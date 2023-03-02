@@ -3,6 +3,8 @@ import { Icon } from "@iconify/vue";
 import { computed, ref } from "vue";
 import { format } from 'date-fns'
 import { useRouter, useRoute } from 'vue-router'
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxLabel, ComboboxOption, ComboboxOptions, } from '@headlessui/vue'
+
 const router = useRouter()
 
 const actions = ref([
@@ -14,8 +16,9 @@ const actions = ref([
 
 
 const order = ref({
+    sender: "阿花",
     received_datetime: 1677738479,
-    original_message: `BI B.O.D 要订 ( 26/2/23) 豆浆soymilk ~200 爱玉冰ice jelly ~20 *Logo Bod😊 大吸管 straw besar ~ 小吸管 straw kecil ~ 更换 tukar Soya ~4 Jelly~ Cinca~ Aloe ~`,
+    original_message: `BI B.O.D 要订 ( 26/2/23)\n\n 豆浆soymilk ~200\n爱玉冰ice jelly ~20\n*Logo Bod😊\n大吸管 straw besar ~\n小吸管 straw kecil ~\n更换 tukar Soya ~4\nJelly~\nCinca~\nAloe ~`,
     price: 12.34,
     ship_to:'BI BOD',
     ship_datetime: 1677796079,
@@ -49,11 +52,70 @@ const closeView = () => {
     router.push('/')
 }
 
+const expandOriginalMessage = ref(false)
+const isEditProductActive = ref(false)
+
+const productOperation = ref()
+
+const editProduct = () => {
+  productOperation.value = "edit"
+  isEditProductActive.value = true;
+}
+
+const addProduct = () => {
+  productOperation.value = "add"
+  isEditProductActive.value = true;
+}
+
+
+
+const allProducts = [
+  { id:0, key: 'soymilk', label: 'Soymilk 少爺豆奶' },
+  { key: 'ice_jelly', label: 'Ice Jelly 少爺愛玉冰' },
+  { key: 'grape_ice_jelly', label: 'Grape Ice Jelly 葡萄味愛玉冰' },
+  { key: 'mango_ice_jelly', label: 'Mango Ice Jelly 芒果味愛玉冰' },
+  { key: 'apple_ice_jelly', label: 'Apple Ice Jelly 蘋果味愛玉冰' },
+  { key: 'pink_guava_ice_jelly', label: 'Pink Guava Ice Jelly 番石榴愛玉冰' },
+  { key: 'wheatgrass_ice_jelly', label: 'Wheatgrass Ice Jelly 小麥草愛玉冰' },
+  { key: 'lychee_ice_jelly', label: 'Lychee Ice Jelly 荔枝味愛玉冰' },
+  { key: 'honey_aloe_vera', label: 'Honey Aloe Vera 蜂蜜蘆薈' },
+  { key: 'coconut_milkshake', label: 'Coconut Milkshake 椰子奶昔' },
+  { key: 'passion_fruit_ice_jelly', label: 'Passion Fruit Ice Jelly 百香果愛玉冰' },
+  { key: 'soursop_ice_jelly', label: 'Soursop Ice Jelly 紅毛榴槤愛玉冰' },
+  { key: 'grassjelly_soymilk', label: 'Grass Jelly Soymilk 仙草豆漿' },
+  { key: 'sour_plum', label: 'Sour Plum 酸酐酸梅' },
+  { key: 'ginseng_chrysanthemum', label: 'Ginseng Chrysanthemum 洋參菊花' },
+  { key: 'herbal_tea', label: 'Herbal Tea 龍眼羅漢果' }
+];
+const query = ref('')
+const selectedProduct = ref(null)
+const fitleredProducts = computed(() =>
+  query.value === ''
+    ? allProducts
+    : allProducts.filter((product) => {
+        return product.label.toLowerCase().includes(query.value.toLowerCase())
+      })
+)
+
+const submitEditProduct = () => {
+  isEditProductActive.value = false
+}
+
+
+
 </script>
 
 <template>
   <div class="w-full">
-    <header class="w-full grid grid-cols-[1fr_auto] p-4 justify-center items-center border-b sticky top-0 bg-white">
+    <header class="w-full grid grid-cols-[auto_1fr] gap-4 p-4 justify-center items-center border-b sticky top-0 bg-white">
+
+      <div class="w-full">
+        <button @click="closeView()" class="btn btn-circle btn-sm bg-gray-200 border-none group">
+          <Icon class="text-lg text-gray-700 group-hover:text-white" icon="material-symbols:arrow-back"></Icon>
+        </button>
+      </div>
+
+
       <div class="w-full flex space-x-2 justify-start items-center">
         <div class="w-11 h-11 flex justify-end items-end">
           <div class="w-11 h-11 relative">
@@ -68,11 +130,7 @@ const closeView = () => {
         </div>
       </div>
 
-      <div class="w-full">
-        <button @click="closeView()" class="btn btn-circle btn-sm bg-gray-200 border-none group">
-          <Icon class="text-lg text-gray-700 group-hover:text-white" icon="material-symbols:close-rounded"></Icon>
-        </button>
-      </div>
+      
     </header>
     
 
@@ -100,7 +158,7 @@ const closeView = () => {
         </div>
 
         <div class="w-full h-full flex justify-center items-center">
-            <div class="btn btn-xs btn-ghost">View</div>
+            <div @click="expandOriginalMessage = true" class="btn btn-xs btn-ghost">View</div>
         </div>
       </div>
 
@@ -150,39 +208,51 @@ const closeView = () => {
         <!-- mdi:truck -->
 
         <section class="p-4 py-0">
-          <button class="w-full btn bg-gray-50 border-none flex justify-between items-center text-black capitalize hover:text-white rounded-b-none">
-            <div class="flex justify-center items-center space-x-2">
+          <div class="w-full bg-gray-50 border-none flex justify-between items-center text-black capitalize rounded-t-md p-2">
+            <div class="flex justify-center items-center space-x-2 flex-shrink-0">
               <Icon class="text-xl" icon="material-symbols:location-on-rounded"></Icon>
-              <div>Ship To</div>
+              <div class="text-sm">Ship To</div>
             </div>
 
             <div class="flex justify-center items-center space-x-2">
-              <div>{{order.ship_to}}</div>
-              <Icon icon="ph:caret-right"></Icon>
+              <!-- <div>{{order.ship_to}}</div> -->
+              <input type="text" placeholder="ship to..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
-          </button>
-          <button class="w-full btn bg-gray-50 border-none flex justify-between items-center text-black capitalize hover:text-white rounded-none">
-            <div class="flex justify-center items-center space-x-2">
+          </div>
+
+          <div class="w-full bg-gray-50 border-none flex justify-between items-center text-black capitalize p-2">
+            <div class="flex justify-center items-center space-x-2 flex-shrink-0">
+              <!-- <Icon class="text-xl" icon="material-symbols:location-on-rounded"></Icon> -->
               <Icon class="text-xl" icon="material-symbols:calendar-today"></Icon>
-              <div>Date</div>
+              <div class="text-sm">Date</div>
+
             </div>
 
             <div class="flex justify-center items-center space-x-2">
-              <div>{{shipDateComputed}}</div>
-              <Icon icon="ph:caret-right"></Icon>
+              <!-- <div>{{order.ship_to}}</div> -->
+              <input type="text" placeholder="enter date..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
-          </button>
-          <button class="w-full btn bg-gray-50 border-none flex justify-between items-center text-black capitalize hover:text-white rounded-t-none">
-            <div class="flex justify-center items-center space-x-2">
+          </div>
+
+
+<div class="w-full bg-gray-50 border-none flex justify-between items-center text-black capitalize rounded-b-md p-2">
+            <div class="flex justify-center items-center space-x-2 flex-shrink-0">
+              <!-- <Icon class="text-xl" icon="material-symbols:location-on-rounded"></Icon> -->
               <Icon class="text-xl" icon="mdi:truck"></Icon>
-              <div>Assigned To</div>
+              <div class="text-sm">Assigned To</div>
+
             </div>
 
             <div class="flex justify-center items-center space-x-2">
-              <div>{{order.logistic_assignee}}</div>
-              <Icon icon="ph:caret-right"></Icon>
+              <!-- <div>{{order.ship_to}}</div> -->
+              <input type="text" placeholder="name of the driver..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
-          </button>
+          </div>
+
+          
         </section>
 
         <section class="mt-4">
@@ -196,7 +266,7 @@ const closeView = () => {
           </div>
 
           <div v-for="product in order.products" :key="product" class="border-b border-b-gray-300">
-            <button class="w-full btn btn-ghost flex justify-between items-center capitalize rounded-none font-medium text-sm">
+            <button @click="editProduct(product)" class="w-full btn btn-ghost flex justify-between items-center capitalize rounded-none font-medium text-sm">
               <div class="flex justify-center items-center space-x-2">
                 <div class="font-normal">{{product.label}}</div>
               </div>
@@ -210,7 +280,7 @@ const closeView = () => {
           <div class="w-full flex justify-center items-center p-2">
             <button class="w-full btn btn-ghost space-x-2 capitalize text-blue-500">
               <Icon class="text-2xl" icon="material-symbols:add-circle-rounded"></Icon>
-              <p>Add Product</p>
+              <p @click="addProduct()">Add Product</p>
             </button>
           </div>
         </section>
@@ -263,6 +333,97 @@ const closeView = () => {
         </fieldset>
       </section>
     </div>
+
+    <article :class="[expandOriginalMessage?'modal-open':'','modal']">
+      <div class="modal-box relative">
+        
+        <header class="w-full flex justify-between items-center space-x-2">
+          <p>Original Message</p>
+
+
+          <button @click="expandOriginalMessage = false" class="btn btn-circle btn-sm bg-gray-200 border-none group">
+            <Icon class="text-lg text-gray-700 group-hover:text-white" icon="material-symbols:close"></Icon>
+          </button>
+
+        </header>
+        
+        <article class="w-full mt-4">
+          
+          <p class="text-lg font-medium mb-2">From: {{order.sender}}</p>
+
+          <div class="whitespace-pre bg-gray-100 p-4 rounded-md">
+            <p>{{order.original_message}}</p>
+            <p class="text-right mt-4 text-gray-500 italic">
+              {{receivedComputed}}
+            </p>
+          </div>
+
+        </article>
+
+      </div>
+    </article>
+
+    <article :class="[isEditProductActive?'modal-open':'','modal ']">
+      <div class="modal-box relative">
+        
+        <header class="w-full flex justify-between items-center space-x-2">
+          <p>{{[productOperation == 'edit'?'Edit':false,productOperation == 'add'?'Add':false].find( t => t!=false)}} Product</p>
+
+
+          <button @click="isEditProductActive = false" class="btn btn-circle btn-sm bg-gray-200 border-none group">
+            <Icon class="text-lg text-gray-700 group-hover:text-white" icon="material-symbols:close"></Icon>
+          </button>
+
+        </header>
+        
+        <article class="w-full mt-4">
+          
+          <Combobox as="div" v-model="selectedProduct">
+    <ComboboxLabel class="block text-sm font-medium text-gray-700">Product</ComboboxLabel>
+    <div class="relative mt-1">
+      <ComboboxInput class="w-full input input-bordered" @change="query = $event.target.value" :display-value="(person) => person?.label" />
+      <ComboboxButton class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
+        <!-- <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" /> -->
+              <Icon class="h-5 w-5" icon="heroicons:chevron-up-down-20-solid"></Icon>
+
+      </ComboboxButton>
+
+      <ComboboxOptions v-if="fitleredProducts.length > 0" class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+        <ComboboxOption v-for="product in fitleredProducts" :key="product.key" :value="product" as="template" v-slot="{ active, selected }">
+          <li :class="['relative cursor-default select-none py-2 pl-3 pr-9', active ? 'bg-indigo-600 text-white' : 'text-gray-900']">
+            <span :class="['block truncate', selected && 'font-semibold']">
+              {{ product.label }}
+            </span>
+
+            <span v-if="selected" :class="['absolute inset-y-0 right-0 flex items-center pr-4', active ? 'text-white' : 'text-indigo-600']">
+              <!-- <CheckIcon class="h-5 w-5" aria-hidden="true" /> -->
+              <Icon class="h-5 w-5" icon="material-symbols:check-circle"></Icon>
+            </span>
+          </li>
+        </ComboboxOption>
+      </ComboboxOptions>
+    </div>
+  </Combobox>
+
+
+      <div class="form-control w-full max-w-xs mt-8">
+  <label class="label">
+    <span class="label-text">Quantity</span>
+    <span class="label-text-alt">200 in stock</span>
+  </label>
+  <input type="number" placeholder="Enter amount..." class="input input-bordered w-full max-w-xs" />
+  <label class="label">
+  </label>
+</div>
+
+<div @click="submitEditProduct()" class="w-full py-4">
+  <button class="btn w-full">Update</button>
+</div>
+
+        </article>
+
+      </div>
+    </article>
 
 
 <!--     <footer class="w-full fixed bottom-0 z-10 bg-white border-t p-4 grid grid-cols-6 gap-2 justify-center items-center">

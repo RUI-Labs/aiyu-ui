@@ -82,7 +82,7 @@
                 <h1 class="text-4xl font-bold">Aiyu</h1>
             </div>
             <div class="w-full flex justify-end items-center">
-                <button class="btn btn-ghost btn-sm text-base font-bold text-blue-500 capitalize">Train</button>
+                <button @click="viewTrain()" class="btn btn-ghost btn-sm text-base font-bold text-blue-500 capitalize">Train</button>
             </div>
         </header>
     </main>

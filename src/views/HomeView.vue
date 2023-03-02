@@ -2,6 +2,8 @@
 
     import { Icon } from '@iconify/vue';
     import { ref } from 'vue';
+    import { useRouter, useRoute } from 'vue-router'
+    const router = useRouter()
 
     const chats = ref([])
     for(let i =0;i<10;i++){
@@ -13,6 +15,28 @@
             price:'12.34',
             status: i > 5 ? 'completed': 'pending'
         })
+    }
+
+    const selectChat = (chat) => {
+        router.push('/order')
+    }
+
+    const sorters = ref([
+        {label:'Date',key:'date',mode:'asc'},
+        {label:'Quantity',key:'quantity',mode:false},
+        {label:'Value',key:'value',mode:false},
+    ])
+
+    const hideCompleted = ref(true)
+
+    const toggleHideComplete = () => {
+        hideCompleted.value = !hideCompleted.value 
+    }
+
+    const switchMode = (_sorter) => {
+        if(!_sorter.mode) _sorter.mode = 'asc'
+        else if(_sorter.mode == 'asc') _sorter.mode = 'desc'
+        else if(_sorter.mode == 'desc') _sorter.mode = false
     }
 
 </script>
@@ -30,7 +54,10 @@
             </div>
         </header>
     </main>
-
+    
+    <div class="pl-3 mb-1">
+        <button @click="toggleHideComplete()" class="btn btn-ghost btn-xs text-blue-500 capitalize">{{hideCompleted?'Show':'Hide'}} Completed</button>
+    </div>
     <section class="px-4">
         <div class="bg-gray-100 rounded-xl flex justify-start items-center p-2 px-4">
             <Icon class="text-xl" icon="ph:magnifying-glass"></Icon>
@@ -41,26 +68,16 @@
         <h3 class="font-medium text-sm w-1/4 pl-6">Sort By: </h3>
 
         <div class="w-3/4 flex justify-end items-center space-x-2 pr-4">
-            <div class="btn btn-xs flex justify-center items-center p-1 px-2 w-auto h-auto">
-                <div class="capitalize mr-2 text-sm">Date</div>
-                <Icon icon="ph:caret-down-duotone"></Icon>
-            </div>
-
-            <div class="btn btn-ghost btn-xs flex justify-center items-center p-1 px-2 w-auto h-auto">
-                <div class="capitalize mr-2 text-sm">Quantity</div>
-                <!-- <Icon icon="ph:caret-down-duotone"></Icon> -->
-            </div>
-
-            <div class="btn btn-ghost btn-xs flex justify-center items-center p-1 px-2 w-auto h-auto">
-                <div class="capitalize mr-2 text-sm">Value</div>
-                <!-- <Icon icon="ph:caret-down-duotone"></Icon> -->
+            <div v-for="sorter in sorters" :key="sorter" @click="switchMode(sorter)" :class="[sorter.mode ? '':'btn-ghost', 'btn btn-xs flex justify-center items-center p-1 px-2 w-auto h-auto']">
+                <div class="capitalize mr-2 text-sm">{{sorter.label}}</div>
+                <Icon :class="[sorter.mode == 'desc' ? '':'rotate-180', 'transition-all duration-300 text-lg']" v-if="sorter.mode == 'asc' || sorter.mode == 'desc'" icon="ph:caret-down-duotone"></Icon>
             </div>
         </div>
     </section>
 
     <section class="w-full">
 
-        <div v-for="chat in chats" :key="chat" class="w-full grid grid-cols-[auto_1fr_auto] justify-center items-center py-6 gap-4 border-b px-4">
+        <div @click="selectChat(chat)" v-for="chat in chats" :key="chat" class="active:bg-gray-300 active:scale-90 transition-all duration-200 w-full grid grid-cols-[auto_1fr_auto] justify-center items-center py-6 gap-4 border-b px-4">
 
             <div class="flex justify-start items-center">
                 <div class="w-12 h-12 flex justify-end items-end">

@@ -1,23 +1,28 @@
 <script setup>
 
     import { Icon } from '@iconify/vue';
-    import { ref } from 'vue';
+    import { ref, onMounted, computed } from 'vue';
     import { useRouter, useRoute } from 'vue-router'
+    import { format, fromUnixTime } from 'date-fns'
     const router = useRouter()
 
+    import { useOrderStore } from "@/stores/order.js";
+    const orderStore = useOrderStore();
+
     const chats = ref([])
-    for(let i =0;i<10;i++){
-        chats.value.push({
-            sender: '阿花',
-            summary:'27 FEB - 4 爱玉冰, 3 豆奶',
-            subtitle: 'Johor jaya pou wok 要订   (27/2/23) 豆浆soymilk ~0爱玉冰ice...',
-            timestamp:'12:34pm',
-            price:'12.34',
-            status: i > 5 ? 'completed': 'pending'
-        })
-    }
+    // for(let i =0;i<10;i++){
+    //     chats.value.push({
+    //         sender: '阿花',
+    //         summary:'27 FEB - 4 爱玉冰, 3 豆奶',
+    //         subtitle: 'Johor jaya pou wok 要订   (27/2/23) 豆浆soymilk ~0爱玉冰ice...',
+    //         timestamp:'12:34pm',
+    //         price:'12.34',
+    //         status: i > 5 ? 'completed': 'pending'
+    //     })
+    // }
 
     const selectChat = (chat) => {
+        orderStore.selectOrder(chat);
         router.push('/order')
     }
 
@@ -38,6 +43,33 @@
         else if(_sorter.mode == 'asc') _sorter.mode = 'desc'
         else if(_sorter.mode == 'desc') _sorter.mode = false
     }
+
+    onMounted( async () => {
+        chats.value = await orderStore.getOrder();
+    })
+
+    const sortedChat = computed(() => {
+        if(!chats.value.length) return [];
+        let formattedChat = chats.value
+        for(let sort of sorters.value) {
+            if(sort.mode) {
+                // if(sort.key == 'value') {
+                //     if(sort.mode == 'asc') formattedChat = formattedChat.sort((a,b) => { return a.timestamp - b.timestamp })
+                //     if(sort.mode == 'desc') formattedChat = formattedChat.sort((a,b) => { return b.timestamp - a.timestamp })
+                // } 
+                if(sort.key == 'quantity') {
+                    if(sort.mode == 'asc') formattedChat = formattedChat.sort((a,b) => { return a.quantity - b.quantity })
+                    if(sort.mode == 'desc') formattedChat = formattedChat.sort((a,b) => { return b.quantity - a.quantity })
+                } 
+                if(sort.key == 'date') {
+                    if(sort.mode == 'asc') formattedChat = formattedChat.sort((a,b) => { return a.timestamp - b.timestamp })
+                    if(sort.mode == 'desc') formattedChat = formattedChat.sort((a,b) => { return b.timestamp - a.timestamp })
+                } 
+            }
+        }
+        if(hideCompleted.value) formattedChat = formattedChat.filter((x) => x.status != 'completed')
+        return formattedChat;
+    })
 
 </script>
 
@@ -65,6 +97,7 @@
         </div>
     </section>
     <section class="w-full mt-2 flex justify-between items-center">
+
         <h3 class="font-medium text-sm w-1/4 pl-6">Sort By: </h3>
 
         <div class="w-3/4 flex justify-end items-center space-x-2 pr-4">
@@ -77,7 +110,7 @@
 
     <section class="w-full">
 
-        <div @click="selectChat(chat)" v-for="chat in chats" :key="chat" class="active:bg-gray-300 active:scale-90 transition-all duration-200 w-full grid grid-cols-[auto_1fr_auto] justify-center items-center py-6 gap-4 border-b px-4">
+        <div @click="selectChat(chat)" v-for="chat in sortedChat" :key="chat" class="active:bg-gray-300 active:scale-90 transition-all duration-200 w-full grid grid-cols-[auto_1fr_auto] justify-center items-center py-6 gap-4 border-b px-4">
 
             <div class="flex justify-start items-center">
                 <div class="w-12 h-12 flex justify-end items-end">
@@ -96,11 +129,19 @@
                     <h6 class="text-lg font-bold">{{chat.sender}}</h6>
                 </div>
                 <div class="text-sm font-medium text-blue-500">{{chat.summary}}</div>
-                <div class="text-xs text-gray-400 font-light">{{chat.subtitle}}</div>
+                <!-- <div class="text-sm font-medium text-blue-500">{{chat.quantity}}</div> -->
+                <!-- <div class="text-sm font-medium text-blue-500">{{chat.key}}</div> -->
+                <div v-if="chat.type == 'text'" class="text-xs text-gray-400 font-light">{{ chat.subtitle.substring(0, 50) }}...</div>
+                <div v-if="chat.type == 'image'" class="text-xs text-gray-400 font-light flex items-center">
+                    <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image
+                </div>
+                <div v-if="chat.type == 'audio'" class="text-xs text-gray-400 font-light flex items-center">
+                    <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio
+                </div>
             </div>
 
             <div class="w-full h-full flex flex-col justify-between items-end">
-                <div class="font-light text-gray-400">{{chat.timestamp}}</div>
+                <div class="font-light text-gray-400">{{ format(fromUnixTime(chat.timestamp), 'h:mm aaa') }}</div>
                 <div class="font-medium text-lg">RM {{chat.price}}</div>
             </div>
 

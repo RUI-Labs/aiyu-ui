@@ -9,6 +9,9 @@
     import { useOrderStore } from "@/stores/order.js";
     const orderStore = useOrderStore();
 
+    import { useProductStore } from "@/stores/product.js";
+    const productStore = useProductStore();
+
     const chats = ref([])
     // for(let i =0;i<10;i++){
     //     chats.value.push({
@@ -27,7 +30,7 @@
     }
 
     const sorters = ref([
-        {label:'Date',key:'date',mode:'asc'},
+        {label:'Date',key:'date',mode:'desc'},
         {label:'Quantity',key:'quantity',mode:false},
         {label:'Value',key:'value',mode:false},
     ])
@@ -45,6 +48,7 @@
     }
 
     onMounted( async () => {
+        productStore.getProduct();
         chats.value = await orderStore.getOrder();
     })
 
@@ -70,6 +74,10 @@
         if(hideCompleted.value) formattedChat = formattedChat.filter((x) => x.status != 'completed')
         return formattedChat;
     })
+
+    const viewTrain = () => {
+        router.push('/train')
+    }
 
 </script>
 

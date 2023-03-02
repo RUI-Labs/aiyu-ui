@@ -15,6 +15,7 @@ export default defineConfig({
         short_name: 'Aiyu',
         description: 'Smooth like jelly ',
         theme_color: '#ffffff',
+        gcm_sender_id: "1068033572221",
         icons: [
           {
             src: 'aiyu-192.png',

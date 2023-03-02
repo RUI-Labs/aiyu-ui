@@ -1,33 +1,52 @@
 <script setup>
 import { Icon } from "@iconify/vue";
-import { computed, ref } from "vue";
-import { format } from 'date-fns'
+import { computed, ref, onMounted } from "vue";
+import { format, fromUnixTime } from 'date-fns'
 import { useRouter, useRoute } from 'vue-router'
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxLabel, ComboboxOption, ComboboxOptions, } from '@headlessui/vue'
 
 const router = useRouter()
 
+    import { useOrderStore } from "@/stores/order.js";
+    const orderStore = useOrderStore();
+
+    import { useProductStore } from "@/stores/product.js";
+    const productStore = useProductStore();
+
 const actions = ref([
-  { type: "whatsapp", title: "Reply 阿花 on WhatsApp", article: `收到✅\nOrder Date: 27 Feb 2023`, selected: true },
-  { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to 阿花 on: Tue 28 Feb\n2:00 PM\n Address: BI B.O.D`, selected: true },
-  { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
-  { type: "update-status", title: "Mark as Resolved", article: `Mark this order as resolved`, selected: true },
+  // { type: "whatsapp", title: "Reply 阿花 on WhatsApp", article: `收到✅\nOrder Date: 27 Feb 2023`, selected: true },
+  // { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to 阿花 on: Tue 28 Feb\n2:00 PM\n Address: BI B.O.D`, selected: true },
+  // { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
+  // { type: "update-status", title: "Mark as Resolved", article: `Mark this order as resolved`, selected: true },
 ]);
 
 
+
+
 const order = ref({
-    sender: "阿花",
-    received_datetime: 1677738479,
-    original_message: `BI B.O.D 要订 ( 26/2/23)\n\n 豆浆soymilk ~200\n爱玉冰ice jelly ~20\n*Logo Bod😊\n大吸管 straw besar ~\n小吸管 straw kecil ~\n更换 tukar Soya ~4\nJelly~\nCinca~\nAloe ~`,
-    price: 12.34,
-    ship_to:'BI BOD',
-    ship_datetime: 1677796079,
-    logistic_assignee: 'Bruce Lee',
-    products:[
-        {label:'豆浆 Soy Milk', quantity: 20, unit_price: 5, subtotal: 100},
-        {label:'爱玉冰 Ice Jelly', quantity: 50, unit_price: 5, subtotal: 250},
-        {label:'仙草豆奶 Grass Jelly', quantity: 30, unit_price: 5, subtotal: 150},
-    ]
+    // sender: "阿花",
+    // received_datetime: 1677738479,
+    // original_message: `BI B.O.D 要订 ( 26/2/23)\n\n 豆浆soymilk ~200\n爱玉冰ice jelly ~20\n*Logo Bod😊\n大吸管 straw besar ~\n小吸管 straw kecil ~\n更换 tukar Soya ~4\nJelly~\nCinca~\nAloe ~`,
+    // price: 12.34,
+    // ship_to:'BI BOD',
+    // ship_datetime: 1677796079,
+    // logistic_assignee: 'Bruce Lee',
+    // products:[
+    //     {label:'豆浆 Soy Milk', quantity: 20, unit_price: 5, subtotal: 100},
+    //     {label:'爱玉冰 Ice Jelly', quantity: 50, unit_price: 5, subtotal: 250},
+    //     {label:'仙草豆奶 Grass Jelly', quantity: 30, unit_price: 5, subtotal: 150},
+    // ]
+})
+
+onMounted( async () => {
+  order.value = orderStore.selectedOrder;
+  actions.value = [
+    { type: "whatsapp", title: `Reply ${order.value.fromName} on WhatsApp`, article: `收到✅\nOrder Date: ${ format(fromUnixTime(order.value.ship_datetime), 'd MMM yyyy') }`, selected: true, phoneNumber: order.value.fromPhone },
+    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${order.value.fromName} on: ${ format(fromUnixTime(order.value.ship_datetime), 'd MMM yyyy') }\n Address: ${order.value?.extracted?.for}`, selected: true, phoneNumber: order.value.fromPhone },
+    { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
+    { type: "update-status", title: "Mark as Resolved", article: `Mark this order as resolved`, selected: true },
+  ]
+  console.log(order.value);
 })
 
 const productDetailsShow = ref('quantity')
@@ -37,15 +56,15 @@ const toggleProductDetailsShow = () => {
 }
 
 const receivedComputed = computed( () => {
-    return format( new Date(order.value.received_datetime * 1000), "h:mma d MMMM")
+  if(order.value?.received_datetime) return format( new Date(order.value?.received_datetime * 1000), "h:mma d MMMM")
 })
 
 const shipDateComputed = computed( () => {
-    return format( new Date(order.value.ship_datetime * 1000), "h:mma d MMMM")
+  if(order.value?.ship_datetime)  return format( new Date(order.value?.ship_datetime * 1000), "h:mma d MMMM")
 })
 
 const itemTotal = computed( () => {
-    return order.value.products.reduce((accumulator, product) => accumulator + product.quantity, 0);
+  if(order.value?.products)  return order.value.products.reduce((accumulator, product) => accumulator + product.quantity, 0);
 })
 
 const closeView = () => {
@@ -57,9 +76,13 @@ const isEditProductActive = ref(false)
 
 const productOperation = ref()
 
-const editProduct = () => {
+const editProduct = (product) => {
   productOperation.value = "edit"
   isEditProductActive.value = true;
+  console.log('editProduct', product)
+  selectedProduct.value = product
+  requestedAmount.value = product.quantity
+
 }
 
 const addProduct = () => {
@@ -69,39 +92,92 @@ const addProduct = () => {
 
 
 
-const allProducts = [
-  { id:0, key: 'soymilk', label: 'Soymilk 少爺豆奶' },
-  { key: 'ice_jelly', label: 'Ice Jelly 少爺愛玉冰' },
-  { key: 'grape_ice_jelly', label: 'Grape Ice Jelly 葡萄味愛玉冰' },
-  { key: 'mango_ice_jelly', label: 'Mango Ice Jelly 芒果味愛玉冰' },
-  { key: 'apple_ice_jelly', label: 'Apple Ice Jelly 蘋果味愛玉冰' },
-  { key: 'pink_guava_ice_jelly', label: 'Pink Guava Ice Jelly 番石榴愛玉冰' },
-  { key: 'wheatgrass_ice_jelly', label: 'Wheatgrass Ice Jelly 小麥草愛玉冰' },
-  { key: 'lychee_ice_jelly', label: 'Lychee Ice Jelly 荔枝味愛玉冰' },
-  { key: 'honey_aloe_vera', label: 'Honey Aloe Vera 蜂蜜蘆薈' },
-  { key: 'coconut_milkshake', label: 'Coconut Milkshake 椰子奶昔' },
-  { key: 'passion_fruit_ice_jelly', label: 'Passion Fruit Ice Jelly 百香果愛玉冰' },
-  { key: 'soursop_ice_jelly', label: 'Soursop Ice Jelly 紅毛榴槤愛玉冰' },
-  { key: 'grassjelly_soymilk', label: 'Grass Jelly Soymilk 仙草豆漿' },
-  { key: 'sour_plum', label: 'Sour Plum 酸酐酸梅' },
-  { key: 'ginseng_chrysanthemum', label: 'Ginseng Chrysanthemum 洋參菊花' },
-  { key: 'herbal_tea', label: 'Herbal Tea 龍眼羅漢果' }
-];
+// const allProducts = [
+//   { id:0, key: 'soymilk', label: 'Soymilk 少爺豆奶' },
+//   { key: 'ice_jelly', label: 'Ice Jelly 少爺愛玉冰' },
+//   { key: 'grape_ice_jelly', label: 'Grape Ice Jelly 葡萄味愛玉冰' },
+//   { key: 'mango_ice_jelly', label: 'Mango Ice Jelly 芒果味愛玉冰' },
+//   { key: 'apple_ice_jelly', label: 'Apple Ice Jelly 蘋果味愛玉冰' },
+//   { key: 'pink_guava_ice_jelly', label: 'Pink Guava Ice Jelly 番石榴愛玉冰' },
+//   { key: 'wheatgrass_ice_jelly', label: 'Wheatgrass Ice Jelly 小麥草愛玉冰' },
+//   { key: 'lychee_ice_jelly', label: 'Lychee Ice Jelly 荔枝味愛玉冰' },
+//   { key: 'honey_aloe_vera', label: 'Honey Aloe Vera 蜂蜜蘆薈' },
+//   { key: 'coconut_milkshake', label: 'Coconut Milkshake 椰子奶昔' },
+//   { key: 'passion_fruit_ice_jelly', label: 'Passion Fruit Ice Jelly 百香果愛玉冰' },
+//   { key: 'soursop_ice_jelly', label: 'Soursop Ice Jelly 紅毛榴槤愛玉冰' },
+//   { key: 'grassjelly_soymilk', label: 'Grass Jelly Soymilk 仙草豆漿' },
+//   { key: 'sour_plum', label: 'Sour Plum 酸酐酸梅' },
+//   { key: 'ginseng_chrysanthemum', label: 'Ginseng Chrysanthemum 洋參菊花' },
+//   { key: 'herbal_tea', label: 'Herbal Tea 龍眼羅漢果' }
+// ];
 const query = ref('')
 const selectedProduct = ref(null)
-const fitleredProducts = computed(() =>
-  query.value === ''
-    ? allProducts
-    : allProducts.filter((product) => {
-        return product.label.toLowerCase().includes(query.value.toLowerCase())
-      })
-)
+const requestedAmount = ref(0)
+const fitleredProducts = computed(() => {
+    if(order.value?.products)
+    query.value === ''
+      ? productStore.products.filter((x) => { return !order.value?.products.map((y) => { return y.label}).includes(x.label) })
+      : productStore.products.filter((product) => {
+          return product.label.toLowerCase().includes(query.value.toLowerCase()) && !order.value?.products.map((y) => { return y.label}).includes(product.label)
+        })
+    
+    return []
+})
 
-const submitEditProduct = () => {
-  isEditProductActive.value = false
+const submitEditProduct = async () => {
+  if(productOperation.value == 'add') {
+    if(order.value.products.map((y) => { return y.label}).includes(selectedProduct.value.label)) return;
+    if(!requestedAmount.value || requestedAmount.value <= 0) return;
+  
+    const success = await orderStore.addProduct(orderStore.selectedOrder, selectedProduct.value, requestedAmount.value);
+    resetSelected();
+    isEditProductActive.value = false;
+  
+    if(success) {
+      alert('Order updated.')
+    } else {
+      alert('Order fail to update.')
+    }
+  } else if(productOperation.value == 'edit') {
+    if(!order.value.products.map((y) => { return y.label}).includes(selectedProduct.value.label)) return;
+    if(!requestedAmount.value || requestedAmount.value <= 0 || requestedAmount.value == selectedProduct.value.quantity) return;
+  
+    const success = await orderStore.editProduct(orderStore.selectedOrder, selectedProduct.value, requestedAmount.value);
+    resetSelected();
+    isEditProductActive.value = false;
+  
+    if(success) {
+      alert('Order updated.')
+    } else {
+      alert('Order fail to update.')
+    }
+  }
+
+  
 }
 
+const resolveOrder = async () => {
+  const success = await orderStore.updateOrderCompleted(order.value);
+  if(success) {
+    alert('Order updated.')
+  } else {
+    alert('Order fail to update.')
+  }
+}
 
+const resetSelected = () => {
+  selectedProduct.value = null;
+  requestedAmount.value = 0;
+}
+
+const runAllAction = () => {
+  for(let action of actions.value) {
+    if(action.selected) {
+      if(action.type == 'whatsapp') orderStore.sendWhatsapp(action);
+      if(action.type == 'update-status') orderStore.updateOrderCompleted(order.value);
+    }
+  }
+}
 
 </script>
 
@@ -125,8 +201,8 @@ const submitEditProduct = () => {
         </div>
 
         <div>
-          <h1 class="text-lg font-bold">阿花</h1>
-          <div class="text-xs font-light text-gray-500/50">+601234567890 on WhatsApp</div>
+          <h1 class="text-lg font-bold">{{ order.sender }}</h1>
+          <div class="text-xs font-light text-gray-500/50">+{{ order.fromPhone }} on WhatsApp</div>
         </div>
       </div>
 
@@ -148,13 +224,19 @@ const submitEditProduct = () => {
             <div class="text-xs font-light text-gray-500/70">Received at {{receivedComputed}}</div>
         </div>
 
-        <button class="btn btn-link btn-xs capitalize">Mark as Resolved</button>
+        <button @click="resolveOrder()" class="btn btn-link btn-xs capitalize">Mark as Resolved</button>
       </div>
 
       
       <div class="bg-gray-100 rounded-md p-2 grid grid-cols-6">
-        <div class="text-xs tracking-tight text-gray-500 col-span-5">
+        <div v-if="order.type == 'text'" class="text-xs tracking-tight text-gray-500 col-span-5">
             <p>{{order.original_message}}</p>
+        </div>
+        <div v-if="order.type == 'image'" class="text-xs tracking-tight text-gray-500 col-span-5 flex items-center">
+            <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image
+        </div>
+        <div v-if="order.type == 'audio'" class="text-xs tracking-tight text-gray-500 col-span-5 flex items-center">
+            <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio
         </div>
 
         <div class="w-full h-full flex justify-center items-center">
@@ -186,14 +268,14 @@ const submitEditProduct = () => {
             <p class="text-xs font-light text-gray-500">That’s what i got! If you see anything not right, simply edit them by tapping, Aiyu will learn and do better next time!</p>
           </div>
 
-          <div class="col-span-2 flex justify-end items-center">
+          <!-- <div class="col-span-2 flex justify-end items-center">
             <div class="flex flex-col justify-center items-center">
               <button class="btn btn-circle btn-sm">
                 <Icon class="text-xl" icon="material-symbols:refresh-sharp"></Icon>
               </button>
               <div class="text-xs mt-2">Try Again</div>
             </div>
-          </div>
+          </div> -->
         </section>
 
         <section class="w-full flex justify-between items-center p-4">
@@ -216,7 +298,7 @@ const submitEditProduct = () => {
 
             <div class="flex justify-center items-center space-x-2">
               <!-- <div>{{order.ship_to}}</div> -->
-              <input type="text" placeholder="ship to..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <input v-model="order.ship_to" type="text" placeholder="ship to..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
               <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
           </div>
@@ -231,7 +313,7 @@ const submitEditProduct = () => {
 
             <div class="flex justify-center items-center space-x-2">
               <!-- <div>{{order.ship_to}}</div> -->
-              <input type="text" placeholder="enter date..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <input v-model="shipDateComputed" type="text" placeholder="enter date..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
               <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
           </div>
@@ -247,7 +329,7 @@ const submitEditProduct = () => {
 
             <div class="flex justify-center items-center space-x-2">
               <!-- <div>{{order.ship_to}}</div> -->
-              <input type="text" placeholder="name of the driver..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <input type="text" v-model="order.logistic_assignee" placeholder="name of the driver..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
               <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
           </div>
@@ -295,7 +377,7 @@ const submitEditProduct = () => {
                 <div class="text-xs font-light text-gray-500">3 tasks in lineup ready to go!</div>
               </div>
 
-              <button class="btn rounded-badge btn-sm capitalize px-4 py-3 h-auto bg-blue-500 border-none">Run All</button>
+              <button @click="runAllAction()" class="btn rounded-badge btn-sm capitalize px-4 py-3 h-auto bg-blue-500 border-none">Run All</button>
             </div>
           </legend>
           <div class="mt-4 pr-2">
@@ -352,7 +434,13 @@ const submitEditProduct = () => {
           <p class="text-lg font-medium mb-2">From: {{order.sender}}</p>
 
           <div class="whitespace-pre bg-gray-100 p-4 rounded-md">
-            <p>{{order.original_message}}</p>
+            <p v-if="order.type == 'text'" >{{order.original_message}}</p>
+            <div v-if="order.type == 'image'" class="flex items-center">
+              <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image
+            </div>
+            <div v-if="order.type == 'audio'" class="flex items-center">
+              <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio
+            </div>
             <p class="text-right mt-4 text-gray-500 italic">
               {{receivedComputed}}
             </p>
@@ -409,9 +497,9 @@ const submitEditProduct = () => {
       <div class="form-control w-full max-w-xs mt-8">
   <label class="label">
     <span class="label-text">Quantity</span>
-    <span class="label-text-alt">200 in stock</span>
+    <span class="label-text-alt">{{ selectedProduct?.stock ? selectedProduct?.stock : 0 }} in stock</span>
   </label>
-  <input type="number" placeholder="Enter amount..." class="input input-bordered w-full max-w-xs" />
+  <input v-model="requestedAmount" type="number" placeholder="Enter amount..." class="input input-bordered w-full max-w-xs" />
   <label class="label">
   </label>
 </div>

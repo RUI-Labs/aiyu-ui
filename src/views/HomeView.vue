@@ -12,6 +12,9 @@
     import { useProductStore } from "@/stores/product.js";
     const productStore = useProductStore();
 
+    import { useSocketStore } from "@/stores/socket.js";
+    const socketStore = useSocketStore();
+
     const chats = ref([])
     // for(let i =0;i<10;i++){
     //     chats.value.push({
@@ -26,6 +29,7 @@
 
     const selectChat = (chat) => {
         orderStore.selectOrder(chat);
+        socketStore.connectSocket();
         router.push('/order')
     }
 

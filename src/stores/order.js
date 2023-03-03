@@ -68,10 +68,10 @@ export const useOrderStore = defineStore('order', () => {
     const selectOrder = (order) => {
         selectedOrder.value = order
         selectedOrder.value['received_datetime'] = order.timestamp;
-        selectedOrder.value['ship_datetime'] = order.extracted?.date;
+        selectedOrder.value['ship_datetime'] = order.extracted?.timestamp;
         selectedOrder.value['original_message'] = order.text;
-        selectedOrder.value['ship_to'] = 'BI BOD';
-        selectedOrder.value['logistic_assignee'] = 'Bruce Lee';
+        selectedOrder.value['ship_to'] = order.extracted?.for;
+        selectedOrder.value['logistic_assignee'] = order.extracted?.driver;
         selectedOrder.value['products'] = [];
 
         for(let product of order.extracted.product) {

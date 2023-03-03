@@ -42,25 +42,25 @@ function notifyMe() {
     // want to be respectful there is no need to bother them anymore.
   }
 
-  notifyMe()
+  // notifyMe()
 
-getToken(messaging, { vapidKey: 'BMN2-8zjli2wWlyWTsDAl8emeTjZmJz-9TvwXtHU3fTqaJh4aNgTEZKyG9yodZrqvBU029pRMpwPpAdQQ4WSv4c' }).then((currentToken) => {
-    if (currentToken) {
-      // Send the token to your server and update the UI if necessary
-      alert(currentToken)
-      console.log(currentToken)
-      // ...
-    } else {
-      // Show permission request UI
-      alert('No registration token available. Request permission to generate one.')
-      console.log('No registration token available. Request permission to generate one.');
-      // ...
-    }
-  }).catch((err) => {
-    alert(JSON.stringify(err))
-    console.log('An error occurred while retrieving token. ', err);
-    // ...
-  });
+// getToken(messaging, { vapidKey: 'BMN2-8zjli2wWlyWTsDAl8emeTjZmJz-9TvwXtHU3fTqaJh4aNgTEZKyG9yodZrqvBU029pRMpwPpAdQQ4WSv4c' }).then((currentToken) => {
+//     if (currentToken) {
+//       // Send the token to your server and update the UI if necessary
+//       alert(currentToken)
+//       console.log(currentToken)
+//       // ...
+//     } else {
+//       // Show permission request UI
+//       alert('No registration token available. Request permission to generate one.')
+//       console.log('No registration token available. Request permission to generate one.');
+//       // ...
+//     }
+//   }).catch((err) => {
+//     alert(JSON.stringify(err))
+//     console.log('An error occurred while retrieving token. ', err);
+//     // ...
+//   });
 
 
 onMessage(messaging, (payload) => {

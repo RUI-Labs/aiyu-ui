@@ -374,7 +374,7 @@ const runAllAction = () => {
             <div class="w-full flex justify-between items-center">
               <div>
                 <h6 class="font-semibold">Action Lineups</h6>
-                <div class="text-xs font-light text-gray-500">3 tasks in lineup ready to go!</div>
+                <div class="text-xs font-light text-gray-500">{{ actions.length }} tasks in lineup ready to go!</div>
               </div>
 
               <button @click="runAllAction()" class="btn rounded-badge btn-sm capitalize px-4 py-3 h-auto bg-blue-500 border-none">Run All</button>

@@ -41,8 +41,8 @@ const order = ref({
 onMounted( async () => {
   orderStore.selectedOrder = orderStore.selectedOrder;
   actions.value = [
-    { type: "whatsapp", title: `Reply ${orderStore.selectedOrder.fromName} on WhatsApp`, article: `收到✅\nOrder Date: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }`, selected: true, phoneNumber: orderStore.selectedOrder.fromPhone },
-    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${orderStore.selectedOrder.fromName} on: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }\n Address: ${orderStore.selectedOrder?.extracted?.for}`, selected: true, phoneNumber: "601110653730" },
+    { type: "whatsapp", title: `Reply ${orderStore.selectedOrder.fromName} on WhatsApp`, article: `收到✅\nOrder Date: ${ format(fromUnixTime(orderStore.selectedOrder?.ship_datetime), 'd MMM yyyy') }`, selected: true, phoneNumber: orderStore.selectedOrder.fromPhone },
+    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${orderStore.selectedOrder.fromName} on: ${ format(fromUnixTime(orderStore.selectedOrder?.ship_datetime), 'd MMM yyyy') }\n Address: ${orderStore.selectedOrder?.extracted?.for}`, selected: true, phoneNumber: "601110653730" },
     // { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
     { type: "update-status", title: "Mark as Resolved", article: `Mark this order as resolved`, selected: true },
   ]
@@ -267,10 +267,11 @@ const runAllAction = () => {
 
     <div class="p-2">
       <article class="w-full bg-gray-200 rounded-xl">
-        <section class="w-full grid grid-cols-7 justify-center items-center gap-4 p-4">
+        <section class="w-full grid grid-cols-7 justify-center items-center gap-4 p-4 pb-0">
           <div class="col-span-5">
-            <h1 class="text-xl mb-2">Aiyu-BING</h1>
-            <p class="text-xs font-light text-gray-500">That’s what i got! If you see anything not right, simply edit them by tapping, Aiyu will learn and do better next time!</p>
+            <!-- <h1 class="text-xl mb-2">Aiyu-BING</h1> -->
+            <h1 class="text-xl mb-2">{{ orderStore.selectedOrder?.sender }}</h1>
+            <!-- <p class="text-xs font-light text-gray-500">That’s what i got! If you see anything not right, simply edit them by tapping, Aiyu will learn and do better next time!</p> -->
           </div>
 
           <!-- <div class="col-span-2 flex justify-end items-center">
@@ -335,6 +336,21 @@ const runAllAction = () => {
             <div class="flex justify-center items-center space-x-2">
               <!-- <div>{{order.ship_to}}</div> -->
               <input type="text" v-model="orderStore.selectedOrder.logistic_assignee" placeholder="name of the driver..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <!-- <Icon icon="ph:caret-right"></Icon> -->
+            </div>
+          </div>
+
+          <div v-if="orderStore.selectedOrder?.extracted?.remarks" class="w-full bg-gray-50 border-none flex justify-between items-center text-black capitalize rounded-b-md p-2">
+            <div class="flex justify-center items-center space-x-2 flex-shrink-0">
+              <!-- <Icon class="text-xl" icon="material-symbols:location-on-rounded"></Icon> -->
+              <Icon class="text-xl" icon="material-symbols:edit-note"></Icon>
+              <div class="text-sm">Remark</div>
+
+            </div>
+
+            <div class="flex justify-center items-center space-x-2">
+              <!-- <div>{{order.ship_to}}</div> -->
+              <input type="text" v-model="orderStore.selectedOrder.extracted.remarks" placeholder="remark..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
               <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
           </div>

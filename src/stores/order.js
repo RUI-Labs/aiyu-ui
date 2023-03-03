@@ -67,7 +67,7 @@ export const useOrderStore = defineStore('order', () => {
 
     const selectOrder = (order) => {
         selectedOrder.value = order
-        selectedOrder.value['received_datetime'] = order.timestamp;
+        selectedOrder.value['received_datetime'] = order?.timestamp;
         selectedOrder.value['ship_datetime'] = order.extracted?.timestamp;
         selectedOrder.value['original_message'] = order.text;
         selectedOrder.value['ship_to'] = order.extracted?.for;

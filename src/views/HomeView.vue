@@ -29,7 +29,6 @@
 
     const selectChat = (chat) => {
         orderStore.selectOrder(chat);
-        socketStore.connectSocket();
         router.push('/order')
     }
 
@@ -52,13 +51,15 @@
     }
 
     onMounted( async () => {
+        socketStore.connectSocket();
         productStore.getProduct();
-        chats.value = await orderStore.getOrder();
+        // chats.value = await orderStore.getOrder();
+        await orderStore.getOrder();
     })
 
     const sortedChat = computed(() => {
-        if(!chats.value.length) return [];
-        let formattedChat = chats.value
+        if(!orderStore.orders.length) return [];
+        let formattedChat = orderStore.orders
         for(let sort of sorters.value) {
             if(sort.mode) {
                 // if(sort.key == 'value') {

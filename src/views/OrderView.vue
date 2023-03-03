@@ -39,14 +39,14 @@ const order = ref({
 })
 
 onMounted( async () => {
-  order.value = orderStore.selectedOrder;
+  orderStore.selectedOrder = orderStore.selectedOrder;
   actions.value = [
-    { type: "whatsapp", title: `Reply ${order.value.fromName} on WhatsApp`, article: `收到✅\nOrder Date: ${ format(fromUnixTime(order.value.ship_datetime), 'd MMM yyyy') }`, selected: true, phoneNumber: order.value.fromPhone },
-    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${order.value.fromName} on: ${ format(fromUnixTime(order.value.ship_datetime), 'd MMM yyyy') }\n Address: ${order.value?.extracted?.for}`, selected: true, phoneNumber: order.value.fromPhone },
+    { type: "whatsapp", title: `Reply ${orderStore.selectedOrder.fromName} on WhatsApp`, article: `收到✅\nOrder Date: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }`, selected: true, phoneNumber: orderStore.selectedOrder.fromPhone },
+    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${orderStore.selectedOrder.fromName} on: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }\n Address: ${orderStore.selectedOrder?.extracted?.for}`, selected: true, phoneNumber: orderStore.selectedOrder.fromPhone },
     { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
     { type: "update-status", title: "Mark as Resolved", article: `Mark this order as resolved`, selected: true },
   ]
-  console.log(order.value);
+  console.log(orderStore.selectedOrder);
 })
 
 const productDetailsShow = ref('quantity')
@@ -56,15 +56,15 @@ const toggleProductDetailsShow = () => {
 }
 
 const receivedComputed = computed( () => {
-  if(order.value?.received_datetime) return format( new Date(order.value?.received_datetime * 1000), "h:mma d MMMM")
+  if(orderStore.selectedOrder?.received_datetime) return format( new Date(orderStore.selectedOrder?.received_datetime * 1000), "h:mma d MMMM")
 })
 
 const shipDateComputed = computed( () => {
-  if(order.value?.ship_datetime)  return format( new Date(order.value?.ship_datetime * 1000), "h:mma d MMMM")
+  if(orderStore.selectedOrder?.ship_datetime)  return format( new Date(orderStore.selectedOrder?.ship_datetime * 1000), "h:mma d MMMM")
 })
 
 const itemTotal = computed( () => {
-  if(order.value?.products)  return order.value.products.reduce((accumulator, product) => accumulator + product.quantity, 0);
+  if(orderStore.selectedOrder?.products)  return orderStore.selectedOrder.products.reduce((accumulator, product) => accumulator + product.quantity, 0);
 })
 
 const closeView = () => {
@@ -114,19 +114,20 @@ const query = ref('')
 const selectedProduct = ref(null)
 const requestedAmount = ref(0)
 const fitleredProducts = computed(() => {
-    if(order.value?.products)
-    query.value === ''
-      ? productStore.products.filter((x) => { return !order.value?.products.map((y) => { return y.label}).includes(x.label) })
-      : productStore.products.filter((product) => {
-          return product.label.toLowerCase().includes(query.value.toLowerCase()) && !order.value?.products.map((y) => { return y.label}).includes(product.label)
-        })
-    
-    return []
+    let tmp = []
+    if(orderStore.selectedOrder?.products) {
+      query.value === ''
+        ? tmp = productStore.products.filter((x) => { return !orderStore.selectedOrder?.products.map((y) => { return y.label}).includes(x.label) })
+        : tmp = productStore.products.filter((product) => {
+            return product.label.toLowerCase().includes(query.value.toLowerCase()) && !orderStore.selectedOrder?.products.map((y) => { return y.label}).includes(product.label)
+          })
+    }
+    return tmp
 })
 
 const submitEditProduct = async () => {
   if(productOperation.value == 'add') {
-    if(order.value.products.map((y) => { return y.label}).includes(selectedProduct.value.label)) return;
+    if(orderStore.selectedOrder.products.map((y) => { return y.label}).includes(selectedProduct.value.label)) return;
     if(!requestedAmount.value || requestedAmount.value <= 0) return;
   
     const success = await orderStore.addProduct(orderStore.selectedOrder, selectedProduct.value, requestedAmount.value);
@@ -139,7 +140,7 @@ const submitEditProduct = async () => {
       alert('Order fail to update.')
     }
   } else if(productOperation.value == 'edit') {
-    if(!order.value.products.map((y) => { return y.label}).includes(selectedProduct.value.label)) return;
+    if(!orderStore.selectedOrder.products.map((y) => { return y.label}).includes(selectedProduct.value.label)) return;
     if(!requestedAmount.value || requestedAmount.value <= 0 || requestedAmount.value == selectedProduct.value.quantity) return;
   
     const success = await orderStore.editProduct(orderStore.selectedOrder, selectedProduct.value, requestedAmount.value);
@@ -157,7 +158,7 @@ const submitEditProduct = async () => {
 }
 
 const resolveOrder = async () => {
-  const success = await orderStore.updateOrderCompleted(order.value);
+  const success = await orderStore.updateOrderCompleted(orderStore.selectedOrder);
   if(success) {
     alert('Order updated.')
   } else {
@@ -174,7 +175,7 @@ const runAllAction = () => {
   for(let action of actions.value) {
     if(action.selected) {
       if(action.type == 'whatsapp') orderStore.sendWhatsapp(action);
-      if(action.type == 'update-status') orderStore.updateOrderCompleted(order.value);
+      if(action.type == 'update-status') orderStore.updateOrderCompleted(orderStore.selectedOrder);
     }
   }
 }
@@ -201,8 +202,8 @@ const runAllAction = () => {
         </div>
 
         <div>
-          <h1 class="text-lg font-bold">{{ order.sender }}</h1>
-          <div class="text-xs font-light text-gray-500/50">+{{ order.fromPhone }} on WhatsApp</div>
+          <h1 class="text-lg font-bold">{{ orderStore.selectedOrder?.sender }}</h1>
+          <div class="text-xs font-light text-gray-500/50">+{{ orderStore.selectedOrder?.fromPhone }} on WhatsApp</div>
         </div>
       </div>
 
@@ -229,13 +230,13 @@ const runAllAction = () => {
 
       
       <div class="bg-gray-100 rounded-md p-2 grid grid-cols-6">
-        <div v-if="order.type == 'text'" class="text-xs tracking-tight text-gray-500 col-span-5">
-            <p>{{order.original_message}}</p>
+        <div v-if="orderStore.selectedOrder?.type == 'text'" class="text-xs tracking-tight text-gray-500 col-span-5">
+            <p>{{orderStore.selectedOrder?.original_message}}</p>
         </div>
-        <div v-if="order.type == 'image'" class="text-xs tracking-tight text-gray-500 col-span-5 flex items-center">
+        <div v-if="orderStore.selectedOrder?.type == 'image'" class="text-xs tracking-tight text-gray-500 col-span-5 flex items-center">
             <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image
         </div>
-        <div v-if="order.type == 'audio'" class="text-xs tracking-tight text-gray-500 col-span-5 flex items-center">
+        <div v-if="orderStore.selectedOrder?.type == 'audio'" class="text-xs tracking-tight text-gray-500 col-span-5 flex items-center">
             <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio
         </div>
 
@@ -279,7 +280,7 @@ const runAllAction = () => {
         </section>
 
         <section class="w-full flex justify-between items-center p-4">
-          <h2 class="text-lg font-medium">RM {{order.price}}</h2>
+          <h2 class="text-lg font-medium">RM {{orderStore.selectedOrder?.price?.toFixed(2)}}</h2>
           <div class="flex space-x-1 justify-center items-center">
             <div class="w-3 h-3 rounded-full bg-green-400"></div>
             <div class="text-xs">All Items In-Stock</div>
@@ -298,7 +299,7 @@ const runAllAction = () => {
 
             <div class="flex justify-center items-center space-x-2">
               <!-- <div>{{order.ship_to}}</div> -->
-              <input v-model="order.ship_to" type="text" placeholder="ship to..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <input v-model="orderStore.selectedOrder.ship_to" type="text" placeholder="ship to..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
               <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
           </div>
@@ -319,7 +320,7 @@ const runAllAction = () => {
           </div>
 
 
-<div class="w-full bg-gray-50 border-none flex justify-between items-center text-black capitalize rounded-b-md p-2">
+          <div class="w-full bg-gray-50 border-none flex justify-between items-center text-black capitalize rounded-b-md p-2">
             <div class="flex justify-center items-center space-x-2 flex-shrink-0">
               <!-- <Icon class="text-xl" icon="material-symbols:location-on-rounded"></Icon> -->
               <Icon class="text-xl" icon="mdi:truck"></Icon>
@@ -329,7 +330,7 @@ const runAllAction = () => {
 
             <div class="flex justify-center items-center space-x-2">
               <!-- <div>{{order.ship_to}}</div> -->
-              <input type="text" v-model="order.logistic_assignee" placeholder="name of the driver..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
+              <input type="text" v-model="orderStore.selectedOrder.logistic_assignee" placeholder="name of the driver..." class="input input-ghost input-sm focus:outline-none focus:border-b focus:border-t-0 border-l-0 border-r-0 rounded-none focus:border-blue-500 text-right">
               <!-- <Icon icon="ph:caret-right"></Icon> -->
             </div>
           </div>
@@ -347,7 +348,7 @@ const runAllAction = () => {
             <button @click="toggleProductDetailsShow()" class="btn btn-link btn-xs capitalize">{{productDetailsShow=='quantity'?'Show':'Hide'}} Price Subtotal</button>
           </div>
 
-          <div v-for="product in order.products" :key="product" class="border-b border-b-gray-300">
+          <div v-for="product in orderStore.selectedOrder?.products" :key="product" class="border-b border-b-gray-300">
             <button @click="editProduct(product)" class="w-full btn btn-ghost flex justify-between items-center capitalize rounded-none font-medium text-sm">
               <div class="flex justify-center items-center space-x-2">
                 <div class="font-normal">{{product.label}}</div>
@@ -431,14 +432,14 @@ const runAllAction = () => {
         
         <article class="w-full mt-4">
           
-          <p class="text-lg font-medium mb-2">From: {{order.sender}}</p>
+          <p class="text-lg font-medium mb-2">From: {{orderStore.selectedOrder?.sender}}</p>
 
           <div class="whitespace-pre bg-gray-100 p-4 rounded-md">
-            <p v-if="order.type == 'text'" >{{order.original_message}}</p>
-            <div v-if="order.type == 'image'" class="flex items-center">
+            <p v-if="orderStore.selectedOrder?.type == 'text'" >{{orderStore.selectedOrder?.original_message}}</p>
+            <div v-if="orderStore.selectedOrder?.type == 'image'" class="flex items-center">
               <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image
             </div>
-            <div v-if="order.type == 'audio'" class="flex items-center">
+            <div v-if="orderStore.selectedOrder?.type == 'audio'" class="flex items-center">
               <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio
             </div>
             <p class="text-right mt-4 text-gray-500 italic">

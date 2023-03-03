@@ -2,51 +2,45 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import axios from 'axios';
 import { format, fromUnixTime } from 'date-fns'
-// import { createClient } from 'redis';
+
+import { useProductStore } from "@/stores/product.js";
+import { useOrderStore } from "@/stores/order.js";
 
 export const useSocketStore = defineStore('socket', () => {
 
-    const connectionString = "redis-12925.c252.ap-southeast-1-1.ec2.cloud.redislabs.com:12925"
-    // const client = createClient({
-    //     url: connectionString
-    // });
+    const productStore = useProductStore();
+    const orderStore = useOrderStore();
 
 
     const connectSocket = () => {
         return new Promise( async (resolve) => {
             try {
 
+                const ws = new WebSocket("wss://websocket.shaoye.org");
 
-                // const subscriber = client.duplicate();
-                // subscriber.on('error', err => console.error(err));
-                // await subscriber.connect();
+                ws.onmessage = async function (evt) {
+                    let res = JSON.parse(evt?.data);
+                    console.log(res);
+                    if(res.message == 'order') {
+                        await orderStore.getOrder();
+                        if(orderStore.selectedOrder) {
+                            console.log(orderStore.orders.find(x => x.key == orderStore.selectedOrder.key ))
+                            orderStore.selectOrder( orderStore.orders.find(x => x.key == orderStore.selectedOrder.key ) )
+                        }
+                    }
 
-                // redis.crea
-                // console.log(client)
-                
+                    if(res.message == 'product') {
+                        productStore.getProduct();
+                    }
+                }
 
-                // await client.connect();
+                ws.onopen = function () {
+                    console.log("WS CONNECTED");
+                };
 
-
-                // client.subscribe("message", (message, channel) => {
-                //     console.log(channel, message)
-                // })
-
-                // const ws = new WebSocket(connectionString);
-
-                // ws.on("message", (channel, message) => {
-                //     console.log("Received data :" + message)
-                // })
-
-                // ws.onopen = function () {
-                //     console.log("WS CONNECTED");
-                //   };
-
-                // client.on("connect", (channel, message) => {
-                //     console.log("Received data :" + message)
-                // })
-                
-
+                ws.onclose = function () {
+                    connectSocket()
+                };
                 
                 resolve(true);
             } catch(error) {

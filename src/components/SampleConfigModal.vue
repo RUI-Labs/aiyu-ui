@@ -20,7 +20,7 @@ const openModal = (message,index) => {
     const output = dJSON.parse(message.output);
     
     order.value.ship_to = output.for;
-    order.value.ship_datetime = output.timestamp;
+    order.value.ship_datetime = Math.floor(new Date(`${output.date_year}.${output.date_month}.${output.date_day}`).getTime() / 1000);
     order.value.ship_datetime_object = new Date(output.timestamp * 1000)
     order.value.products = output.product ? output.product?.map((x) => ({label: x.name, quantity: x.quantity})) : [];
     order.value.remark = output.remarks

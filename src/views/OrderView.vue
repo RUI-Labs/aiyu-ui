@@ -506,7 +506,7 @@ const runAllAction = () => {
       <div class="form-control w-full max-w-xs mt-8">
   <label class="label">
     <span class="label-text">Quantity</span>
-    <span class="label-text-alt">{{ selectedProduct?.stock ? selectedProduct?.stock : 0 }} in stock</span>
+    <span class="label-text-alt">{{ selectedProduct?.stock ? selectedProduct?.stock : 1000 }} in stock</span>
   </label>
   <input v-model="requestedAmount" type="number" placeholder="Enter amount..." class="input input-bordered w-full max-w-xs" />
   <label class="label">

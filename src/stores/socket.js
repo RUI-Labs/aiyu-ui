@@ -5,12 +5,14 @@ import { format, fromUnixTime } from 'date-fns'
 
 import { useProductStore } from "@/stores/product.js";
 import { useOrderStore } from "@/stores/order.js";
+import { useBusinessStore } from "@/stores/business.js";
+
 
 export const useSocketStore = defineStore('socket', () => {
 
     const productStore = useProductStore();
     const orderStore = useOrderStore();
-
+    const businessStore = useBusinessStore();
 
     const connectSocket = () => {
         return new Promise( async (resolve) => {
@@ -31,6 +33,10 @@ export const useSocketStore = defineStore('socket', () => {
 
                     if(res.message == 'product') {
                         productStore.getProduct();
+                    }
+
+                    if(res.message == 'business') {
+                        businessStore.getBusiness();
                     }
                 }
 

@@ -42,8 +42,8 @@ onMounted( async () => {
   orderStore.selectedOrder = orderStore.selectedOrder;
   actions.value = [
     { type: "whatsapp", title: `Reply ${orderStore.selectedOrder.fromName} on WhatsApp`, article: `收到✅\nOrder Date: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }`, selected: true, phoneNumber: orderStore.selectedOrder.fromPhone },
-    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${orderStore.selectedOrder.fromName} on: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }\n Address: ${orderStore.selectedOrder?.extracted?.for}`, selected: true, phoneNumber: orderStore.selectedOrder.fromPhone },
-    { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
+    { type: "whatsapp", title: "Inform Bruce Lee on WhatsApp", article: `Delivery to ${orderStore.selectedOrder.fromName} on: ${ format(fromUnixTime(orderStore.selectedOrder.ship_datetime), 'd MMM yyyy') }\n Address: ${orderStore.selectedOrder?.extracted?.for}`, selected: true, phoneNumber: "601110653730" },
+    // { type: "attachment", title: "Send PO to Admin", article: `Purchase Order #001`, selected: true },
     { type: "update-status", title: "Mark as Resolved", article: `Mark this order as resolved`, selected: true },
   ]
   console.log(orderStore.selectedOrder);
@@ -164,6 +164,7 @@ const resolveOrder = async () => {
   } else {
     alert('Order fail to update.')
   }
+  closeView();
 }
 
 const resetSelected = () => {
@@ -175,7 +176,10 @@ const runAllAction = () => {
   for(let action of actions.value) {
     if(action.selected) {
       if(action.type == 'whatsapp') orderStore.sendWhatsapp(action);
-      if(action.type == 'update-status') orderStore.updateOrderCompleted(orderStore.selectedOrder);
+      if(action.type == 'update-status') {
+        orderStore.updateOrderCompleted(orderStore.selectedOrder);
+        closeView();
+      }
     }
   }
 }
@@ -396,7 +400,7 @@ const runAllAction = () => {
                         <p class="text-xs font-light text-gray-500">{{ action.title }}</p>
                     </div>
 
-                    <div class="text-xs flex-shrink-0 font-light text-gray-500">Ran 0 times</div>
+                    <!-- <div class="text-xs flex-shrink-0 font-light text-gray-500">Ran 0 times</div> -->
                   </div>
 
                   <div class="w-full grid grid-cols-5 justify-start items-end">
@@ -404,7 +408,7 @@ const runAllAction = () => {
                       {{ action.article }}
                     </article>
 
-                    <p v-if="action.type != 'update-status'" class="text-xs font-light text-gray-500 text-right">tap to edit</p>
+                    <!-- <p v-if="action.type != 'update-status'" class="text-xs font-light text-gray-500 text-right">tap to edit</p> -->
                   </div>
                 </div>
               </div>
@@ -437,10 +441,14 @@ const runAllAction = () => {
           <div class="whitespace-pre bg-gray-100 p-4 rounded-md">
             <p v-if="orderStore.selectedOrder?.type == 'text'" >{{orderStore.selectedOrder?.original_message}}</p>
             <div v-if="orderStore.selectedOrder?.type == 'image'" class="flex items-center">
-              <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image
+              <!-- <Icon icon="material-symbols:image-outline-rounded"></Icon>&nbsp; Image -->
+              <img :src="`https://aiyuworld.s3.ap-southeast-1.amazonaws.com/media/${orderStore.selectedOrder.mediaId}`" >
             </div>
             <div v-if="orderStore.selectedOrder?.type == 'audio'" class="flex items-center">
-              <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio
+              <!-- <Icon icon="ph:speaker-high-bold"></Icon>&nbsp; Audio -->
+              <audio controls>
+                <source :src="`https://aiyuworld.s3.ap-southeast-1.amazonaws.com/media/${orderStore.selectedOrder.mediaId}`" type="audio/ogg">
+              </audio>
             </div>
             <p class="text-right mt-4 text-gray-500 italic">
               {{receivedComputed}}

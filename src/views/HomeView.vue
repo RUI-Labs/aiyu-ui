@@ -12,8 +12,8 @@
     import { useProductStore } from "@/stores/product.js";
     const productStore = useProductStore();
 
-    import { useSocketStore } from "@/stores/socket.js";
-    const socketStore = useSocketStore();
+    import { useBusinessStore } from "@/stores/business.js";
+    const businessStore = useBusinessStore();
 
     const chats = ref([])
     // for(let i =0;i<10;i++){
@@ -51,8 +51,8 @@
     }
 
     onMounted( async () => {
-        socketStore.connectSocket();
         productStore.getProduct();
+        businessStore.getBusiness();
         // chats.value = await orderStore.getOrder();
         await orderStore.getOrder();
     })
@@ -155,7 +155,7 @@
 
             <div class="w-full h-full flex flex-col justify-between items-end">
                 <div class="font-light text-gray-400">{{ format(fromUnixTime(chat.timestamp), 'h:mm aaa') }}</div>
-                <div class="font-medium text-lg">RM {{chat.price}}</div>
+                <div class="font-medium text-lg">RM {{chat.price.toFixed(2)}}</div>
             </div>
 
         </div>

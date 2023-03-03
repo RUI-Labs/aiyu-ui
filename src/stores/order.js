@@ -171,9 +171,28 @@ export const useOrderStore = defineStore('order', () => {
         return new Promise( async (resolve) => {
             try {
                 console.log(action)
-                const url = `https://api.whatsapp.com/send?phone=${action.phoneNumber}&text=${ encodeURI(action.article) }`
-                const response = await axios.get(url)
-                console.log(response.data)
+                // const url = `https://api.whatsapp.com/send?phone=${action.phoneNumber}&text=${ encodeURI(action.article) }`
+                // const response = await axios.get(url)
+                // console.log(response.data)
+
+
+                var data = JSON.stringify({
+                    "to": action.phoneNumber,
+                    "body": action.article
+                });
+                  
+                var config = {
+                    method: 'post',
+                    url: 'https://webhooks.shaoye.org/messages',
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data : data
+                };
+
+                const response = await axios(config)
+                console.log('sendWhatsapp', response.data);
+
                 resolve(true);
             } catch(error) {
                 console.error(error)

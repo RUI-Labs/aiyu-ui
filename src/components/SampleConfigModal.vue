@@ -1,15 +1,42 @@
 <script setup>
 import { computed, ref } from "vue";
 import { Icon } from "@iconify/vue";
-import { format } from 'date-fns'
+import { format, fromUnixTime } from 'date-fns'
+import dJSON from 'dirty-json';
 
 const isActive = ref(false);
 
-const openModal = (message) => {
+const targetPosition = ref(null);
+const mode = ref('add')
+const openModal = (message,index) => {
+  mode.value = 'add'
+
   if (message) {
+    console.log('sample', message,index)
+    mode.value = 'edit'
+    targetPosition.value = index;
     // originalMessage.value = message;
+    order.value.original_message = message.input;
+    const output = dJSON.parse(message.output);
+    
+    order.value.ship_to = output.for;
+    order.value.ship_datetime = output.timestamp;
+    order.value.ship_datetime_object = new Date(output.timestamp * 1000)
+    order.value.products = output.product ? output.product?.map((x) => ({label: x.name, quantity: x.quantity})) : [];
+    order.value.remark = output.remarks
+
+    // products:[
+    //     {label:'豆浆 Soy Milk', quantity: 20, unit_price: 5, subtotal: 100},
+    //     {label:'爱玉冰 Ice Jelly', quantity: 50, unit_price: 5, subtotal: 250},
+    //     {label:'仙草豆奶 Grass Jelly', quantity: 30, unit_price: 5, subtotal: 150},
+    // ]
+
     flicking.value.moveTo(2)
+    disableNextButton.value = false
+    
   }
+
+  
   isActive.value = true;
 };
 
@@ -18,7 +45,7 @@ const closeModal = () => {
   isActive.value = false;
 };
 
-const originalMessage = ref("Aus分店 pou wok \n要订   (26/2/23) \n\n豆浆soymilk ~30\n爱玉冰ice jelly ~3O\n洋参 ginseng ~40\n\n自助餐：爱玉冰20杯\n\n大吸管 straw besar ~1\n小吸管 straw kecil ~2");
+// const originalMessage = ref("Aus分店 pou wok \n要订   (26/2/23) \n\n豆浆soymilk ~30\n爱玉冰ice jelly ~3O\n洋参 ginseng ~40\n\n自助餐：爱玉冰20杯\n\n大吸管 straw besar ~1\n小吸管 straw kecil ~2");
 const products = ref([
   { label: "豆浆", quantity: 20 },
   { label: "爱玉冰", quantity: 50 },
@@ -33,7 +60,7 @@ const flickingReady = (ev) => {
 const inferBusy = ref(false)
 
 const nextButton = async () => {
-    console.log(flicking.value)
+    console.log(flicking.value.index)
 
     switch(flicking.value?.index){
         
@@ -63,17 +90,77 @@ const nextButton = async () => {
 }
 
 const getInference = () => {
-    return new Promise( (resolve) => {
+    return new Promise( async (resolve) => {
         inferBusy.value =true
-        setTimeout( () => {
-            inferBusy.value = false
-            resolve(true)
-        }, 1000)
+
+        const output = await businessStore.openAiParse(inputTextarea.value)
+        console.log('response', output)
+
+        order.value.original_message = inputTextarea.value;
+        order.value.ship_to = output.for;
+        order.value.ship_datetime = Math.floor(new Date(`${output.date_year}.${output.date_month}.${output.date_day}`).getTime() / 1000);
+        order.value.ship_datetime_object = new Date(order.value.ship_datetime * 1000)
+        order.value.products = output.product ? output.product?.map((x) => ({label: x.name, quantity: x.quantity})) : [];
+        order.value.remark = output.remarks
+
+        inferBusy.value = false
+        mode.value = 'add'
+        resolve(true)
+        // setTimeout(() => {
+
+
+        //     inferBusy.value = false
+        //     resolve(true)
+        // }, 1000)
     })
 }
 
-const saveSample = () => {
-    alert('to be implemented!')
+import { useBusinessStore } from "@/stores/business.js";
+const businessStore = useBusinessStore();
+const saveSample = async () => {
+
+    // alert('to be implemented!')
+    let payload = {}
+    payload['sender_phone'] = ''
+    payload['sender_name'] = ''
+    payload['for'] = order.value?.ship_to
+    payload['product'] = order.value?.products?.map((x) => ({name: x.label, quantity: x.quantity}));
+    payload['remarks'] = order.value?.remark
+    payload['intent'] = 'buy'
+    payload['timestamp'] = Math.floor(order.value.ship_datetime_object.getTime() / 1000)
+    payload['date'] = format( fromUnixTime(payload['timestamp']), 'd/M/yyyy' )
+    payload['date_year'] = format( fromUnixTime(payload['timestamp']), 'yyyy' )
+    payload['date_month'] = format( fromUnixTime(payload['timestamp']), 'M' )
+    payload['date_day'] = format( fromUnixTime(payload['timestamp']), 'd' )
+
+    console.log('payload', payload)
+    
+    if(mode.value == 'edit') {
+  
+  
+      const success = await businessStore.editSample(order.value.original_message, JSON.stringify(payload), targetPosition.value)
+
+      if(success) {
+        alert('Sample updated')
+      } else {
+        alert('Sample fail to update.')
+      }
+
+    } else if(mode.value == 'add') {
+
+
+      const success = await businessStore.addSample(inputTextarea.value, JSON.stringify(payload))
+
+      if(success) {
+        alert('Sample added')
+      } else {
+        alert('Sample fail to add.')
+      }
+
+    }
+
+    closeModal();
+
 }
 
 const inputTextarea = ref()
@@ -83,7 +170,7 @@ console.log(flicking.value?.index)
     switch(flicking.value?.index){
 
             case 0:
-                if(inputTextarea.value.length > 0){
+                if(inputTextarea.value?.length > 0){
                     disableNextButton.value = false
                 }
                 else disableNextButton.value = true
@@ -93,28 +180,31 @@ console.log(flicking.value?.index)
                 disableNextButton.value = true
                 break;
 
+            case 2:
+                disableNextButton.value = false
+                break;
 
         }
     return true
 }
 
 const order = ref({
-    received_datetime: 1677738479,
-    original_message: `BI B.O.D 要订 ( 26/2/23) 豆浆soymilk ~200 爱玉冰ice jelly ~20 *Logo Bod😊 大吸管 straw besar ~ 小吸管 straw kecil ~ 更换 tukar Soya ~4 Jelly~ Cinca~ Aloe ~`,
-    price: 12.34,
-    ship_to:'BI BOD',
-    ship_datetime: 1677796079,
-    logistic_assignee: 'Bruce Lee',
-    products:[
-        {label:'豆浆 Soy Milk', quantity: 20, unit_price: 5, subtotal: 100},
-        {label:'爱玉冰 Ice Jelly', quantity: 50, unit_price: 5, subtotal: 250},
-        {label:'仙草豆奶 Grass Jelly', quantity: 30, unit_price: 5, subtotal: 150},
-    ]
+    // received_datetime: 1677738479,
+    // original_message: `BI B.O.D 要订 ( 26/2/23) 豆浆soymilk ~200 爱玉冰ice jelly ~20 *Logo Bod😊 大吸管 straw besar ~ 小吸管 straw kecil ~ 更换 tukar Soya ~4 Jelly~ Cinca~ Aloe ~`,
+    // price: 12.34,
+    // ship_to:'BI BOD',
+    // ship_datetime: 1677796079,
+    // logistic_assignee: 'Bruce Lee',
+    // products:[
+    //     {label:'豆浆 Soy Milk', quantity: 20, unit_price: 5, subtotal: 100},
+    //     {label:'爱玉冰 Ice Jelly', quantity: 50, unit_price: 5, subtotal: 250},
+    //     {label:'仙草豆奶 Grass Jelly', quantity: 30, unit_price: 5, subtotal: 150},
+    // ]
 })
 
 
 const shipDateComputed = computed( () => {
-    return format( new Date(order.value.ship_datetime * 1000), "h:mma d MMMM")
+  if(order.value?.ship_datetime) return format( new Date(order.value?.ship_datetime * 1000), "h:mma d MMMM")
 })
 
 const addProduct = () => {
@@ -126,6 +216,10 @@ const addProduct = () => {
 defineExpose({
   openModal,
 });
+
+const removeProduct = (index) => {
+  order.value.products.splice(index,1)
+}
 </script>
 
 <template>
@@ -182,7 +276,18 @@ defineExpose({
                 <label class="label">
                   <span class="label-text">Date</span>
                 </label>
-                <input v-model="shipDateComputed" type="text" placeholder="Type here" class="input input-sm input-bordered w-full max-w-xs" />
+
+                <!-- <v-date-picker v-model="order.ship_datetime_object" mode="dateTime" /> -->
+                <v-date-picker v-model="order.ship_datetime_object" mode="datetime">
+                  <template v-slot="{ inputValue, inputEvents }">
+                    <input
+                      class="bg-white border px-2 py-1 rounded"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                    />
+                  </template>
+                </v-date-picker>
+                <!-- <input v-model="shipDateComputed" type="text" placeholder="Type here" class="input input-sm input-bordered w-full max-w-xs" /> -->
               </div>
 
               <div class="form-control w-full max-w-xs">
@@ -194,9 +299,9 @@ defineExpose({
 
               <p class="p-1 py-4">Products</p>
 
-              <div v-for="product in order.products" :key="product" class="w-full grid grid-cols-12 gap-2 mb-2">
+              <div v-for="(product,index) in order.products" :key="product" class="w-full grid grid-cols-12 gap-2 mb-2">
                 <div class="w-full flex justify-center items-center">
-                  <button class="btn btn-circle btn-xs btn-ghost">
+                  <button @click="removeProduct(index)" class="btn btn-circle btn-xs btn-ghost">
                     <Icon class="text-red-400 text-xl" icon="ic:baseline-remove-circle"></Icon>
                   </button>
                 </div>
